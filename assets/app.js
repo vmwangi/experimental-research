@@ -13,6 +13,9 @@
   }
 
   var STORAGE_KEY = "erp-activity-v2";
+  var SITE_URL = "https://vmwangi.github.io/experimental-research/";
+  var SITE_HOST = "vmwangi.github.io/experimental-research";
+  var GROUP_NAME = "Nairobi Data Science 2.0";
   var STEPS = [
     { id: "learn", label: "Learn" },
     { id: "watch", label: "Watch Juma" },
@@ -1130,11 +1133,14 @@
     var earned = ERP.earnedBadges(badgeCtx()).map(function (id) { return ERP.badgeById(id); }).filter(Boolean);
     g.font = "64px 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif";
     earned.slice(0, 10).forEach(function (b, i) { g.fillText(b.icon, 70 + i * 92, 840); });
-    // Footer
-    g.fillStyle = "#9fc3bd"; g.font = "600 30px Georgia, serif";
-    g.fillText("Set the bar in shillings before the test, not in points after it.", 70, 980);
+    // Footer: lesson, a call-to-action link, and the meetup group
+    g.fillStyle = "#9fc3bd"; g.font = "italic 600 30px Georgia, serif";
+    g.fillText("Set the bar in shillings before the test, not in points after it.", 70, 946);
+    g.fillStyle = "#e2a12e"; g.fillRect(70, 998, 8, 34);
+    g.fillStyle = "#ffffff"; g.font = "700 30px Georgia, serif";
+    g.fillText("Try it  →  " + SITE_HOST, 92, 998);
     g.fillStyle = "#6f948e"; g.font = "500 26px Georgia, serif";
-    g.fillText("Experimental Design & A/B Testing · Nairobi meetup", 70, 1024);
+    g.fillText(GROUP_NAME + " · Experimental Design & A/B Testing", 70, 1040);
     return c;
   }
 
@@ -1193,7 +1199,8 @@
   function shareText(score, total, xp) {
     var name = (state.playerName || "").trim();
     return (name ? name + " — " : "") + "I finished the Experimental Research Project as " + ERP.rankForXP(xp.points) +
-      " with " + xp.points + " XP, " + score + "/" + total + " first-try, best streak " + xp.streak.best + ". #ABtesting";
+      " with " + xp.points + " XP, " + score + "/" + total + " first-try, best streak " + xp.streak.best +
+      ". Try it: " + SITE_URL + " (" + GROUP_NAME + ") #ABtesting";
   }
 
   function triggerDownload(blob, name) {

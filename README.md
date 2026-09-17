@@ -31,7 +31,11 @@ Pure logic (scoring, streaks, simulator maths, answer-checking, badges, and cont
 - **In the browser:** open `tests.html` — it runs every assertion and shows pass/fail.
 - **In Node:** `node tests/run-node.js` (no dependencies to install).
 
-Both run the same cases against the same code the app uses.
+Both run the same cases against the same code the app uses. A GitHub Actions workflow (`.github/workflows/tests.yml`) runs the Node suite and a parse check on every push and pull request.
+
+## Sharing
+
+The page carries Open Graph and Twitter meta tags, so pasting the link into WhatsApp or a chat shows a titled preview card (`assets/img/og-cover.png`). The result card learners generate at the finish also carries the activity link and the meetup group name, so every shared card is an invite back to the activity.
 
 ## Publish on GitHub Pages
 
