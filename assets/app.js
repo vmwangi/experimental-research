@@ -33,7 +33,7 @@
     return {
       v: 2, started: false, screen: "home", stage: 0, step: 0,
       q: {}, match: {}, matchSel: null, matchChecked: false,
-      seenBadges: {}, settings: { sound: false, challenge: false, reduceViz: false },
+      seenBadges: {}, settings: { sound: true, soundInit: true, challenge: false, reduceViz: false },
       records: { bestScore: 0, bestStreak: 0, bestTimeMs: 0 },
       startedAt: 0, finishedAt: 0, labUsed: false, challengeCompleted: false,
       finishCelebrated: false, playerName: ""
@@ -49,6 +49,8 @@
       var base = freshState();
       Object.keys(base).forEach(function (k) { if (s[k] === undefined || s[k] === null) s[k] = base[k]; });
       Object.keys(base.settings).forEach(function (k) { if (s.settings[k] === undefined) s.settings[k] = base.settings[k]; });
+      // One-time: sound now defaults on; adopt it for sessions that predate the change.
+      if (s.settings.soundInit !== true) { s.settings.sound = true; s.settings.soundInit = true; }
       Object.keys(base.records).forEach(function (k) { if (s.records[k] === undefined) s.records[k] = base.records[k]; });
       if (["home", "setting", "stage", "finish", "lab"].indexOf(s.screen) < 0) s.screen = "home";
       s.stage = clamp(parseInt(s.stage, 10) || 0, 0, W.stages.length - 1);
@@ -488,17 +490,22 @@
 
   function watchView(st) {
     var w = st.watch;
-    return h("div", null,
+    return h("div", { class: "watch" },
       h("p", { class: "tagline" }, "The referral bonus test, last quarter"),
       h("div", { class: "grid-2" },
-        h("div", null,
-          h("h3", null, "The situation"), h("p", null, w.situation),
-          h("h3", null, "What he did"), h("p", null, w.did),
-          h("p", { class: "result" }, h("strong", null, "Result. "), w.result)
+        h("div", { class: "watch-beats" },
+          h("div", { class: "beat" }, h("h3", null, "The situation"), h("p", null, w.situation)),
+          h("div", { class: "beat" }, h("h3", null, "What he did"), h("p", null, w.did)),
+          h("div", { class: "beat" }, h("p", { class: "result" }, h("strong", null, "Result. "), w.result))
         ),
         h("aside", { class: "panel-dark" },
           h("div", { class: "artifact-head" }, img("juma.png", "", "avatar-sm"), h("h3", null, "The artifact this stage produced")),
-          h("dl", { class: "artifact" }, w.artifact.map(function (row) { return [h("dt", null, row[0]), h("dd", null, row[1])]; }))
+          // Rows assemble one at a time on entry, echoing the project file filling up.
+          h("dl", { class: "artifact" }, w.artifact.map(function (row, i) {
+            var delay = "animation-delay:" + (0.28 + i * 0.08).toFixed(2) + "s";
+            return [h("dt", { class: "assemble-row", style: delay }, row[0]),
+                    h("dd", { class: "assemble-row", style: delay }, row[1])];
+          }))
         )
       )
     );

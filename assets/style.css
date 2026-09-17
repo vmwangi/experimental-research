@@ -575,6 +575,16 @@ button.hud-chip:hover { background: rgba(255,255,255,.16); }
 .toast-title { display: block; font-weight: 700; }
 @media (max-width: 480px) { #toasts { left: 12px; right: 12px; max-width: none; } }
 
+/* Watch Juma: the worked example arrives one beat at a time, and the
+   artifact panel assembles row by row — motion that paces the story. */
+@keyframes watch-seq { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.enter-fwd .watch-beats .beat, .enter-back .watch-beats .beat { animation: watch-seq .5s var(--ease-out) both; }
+.enter-fwd .watch-beats .beat:nth-child(1), .enter-back .watch-beats .beat:nth-child(1) { animation-delay: .06s; }
+.enter-fwd .watch-beats .beat:nth-child(2), .enter-back .watch-beats .beat:nth-child(2) { animation-delay: .24s; }
+.enter-fwd .watch-beats .beat:nth-child(3), .enter-back .watch-beats .beat:nth-child(3) { animation-delay: .42s; }
+.enter-fwd .watch .assemble-row, .enter-back .watch .assemble-row { animation: watch-seq .45s var(--ease-out) both; }
+.watch-beats .beat h3 { margin-top: 0; }
+
 /* xp count-in on finish */
 .enter-fwd .badge-card.got { animation: pop .5s var(--ease-out) both; }
 
