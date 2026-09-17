@@ -12,13 +12,26 @@ Each stage has four steps: **Learn**, **Watch Juma**, **Your turn** (multiple ch
 
 ## Features
 
-- Seven questions with specific feedback for each wrong option, retries, and a "Show me the answer" option after two wrong tries
-- Stages unlock in order; the reveal unlocks once the stage's questions are answered
-- Juma's project file builds up as learners finish each stage and can be downloaded as a text file
-- Score counts answers correct on the first try
-- Progress is saved in the learner's browser (localStorage), with a "Start over" button
-- Smooth page transitions that slide forward or back with the direction of travel, plus animated feedback, progress bar and project file updates; all motion switches off for learners who set "reduce motion" on their device
+- Nine questions in three interaction styles — multiple choice (with specific feedback for every wrong option), a drag-to-order task, and a slider estimate — plus retries and a "Show me the answer" option after two wrong tries
+- **Points and streaks.** Every answer earns XP: full marks first try, less for each retry, a streak bonus for consecutive first-try wins, and a rank that climbs from "Analyst in Training" to "Head of Insight"
+- **Confidence wager.** Before checking, learners wager how sure they are (Hunch / Confident / Certain), which multiplies the points at stake — Certain doubles a win but stings a miss
+- **Badges.** Ten achievements (Flawless, No Peeking, Comeback, High Roller, Experimenter, and more) unlock with a toast and confetti
+- **Experiment Lab.** An interactive A/B-test sandbox: set the baseline, the true lift, and the sample size, then run the experiment and watch the read wobble while the truth holds still — the required sample and power update live
+- **Branching consequences.** The decision stage shows what actually happens to Juma for the call you make, and what would have happened had you chosen differently
+- **Challenge mode.** Hides Juma's worked examples and runs a clock, tracking a personal best
+- **Shareable result card.** At the finish, a PNG card of your rank, XP, score and badges, ready to share (the Web Share sheet surfaces WhatsApp on phones), download, or post as text
+- Celebrations (confetti, optional sound) that all switch off for "reduce motion"; stages unlock in order; Juma's project file builds up and downloads as text
+- Progress, points and badges are saved in the learner's browser (localStorage), with a "Start over" button
 - Keyboard and screen reader friendly, works on phones, no build step and no dependencies
+
+## Tests
+
+Pure logic (scoring, streaks, simulator maths, answer-checking, badges, and content integrity) lives in `assets/logic.js` and is covered by a shared suite in `tests/cases.js`:
+
+- **In the browser:** open `tests.html` — it runs every assertion and shows pass/fail.
+- **In Node:** `node tests/run-node.js` (no dependencies to install).
+
+Both run the same cases against the same code the app uses.
 
 ## Publish on GitHub Pages
 
@@ -38,8 +51,12 @@ All text, questions, answers and feedback live in `assets/data.js`. Each questio
 ```
 index.html          page shell
 assets/data.js      content and question bank
-assets/app.js       app logic
+assets/logic.js     pure scoring / simulator / badge logic (shared with the tests)
+assets/app.js       app logic and rendering
 assets/style.css    styles
 assets/img/         illustrations from the workshop slides
+tests.html          in-browser test runner
+tests/cases.js      shared test cases
+tests/run-node.js   Node test runner
 .nojekyll           tells GitHub Pages to serve files as they are
 ```

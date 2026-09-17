@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tests | Experimental Research Project</title>
+  <style>
+    body { font-family: "Segoe UI", system-ui, sans-serif; max-width: 820px; margin: 0 auto; padding: 24px; color: #132826; background: #f3f6f5; }
+    h1 { font-size: 1.4rem; }
+    #summary { font-size: 1.1rem; font-weight: 700; padding: 12px 16px; border-radius: 10px; margin: 16px 0; }
+    #summary.ok { background: #e4f3ea; color: #1b7446; }
+    #summary.bad { background: #fbe9e5; color: #a8321f; }
+    ul { list-style: none; padding: 0; }
+    li { padding: 8px 12px; border-radius: 8px; margin-bottom: 4px; font-size: .95rem; }
+    li.pass { background: #eef6f4; }
+    li.fail { background: #fbe9e5; color: #a8321f; }
+    li .err { display: block; font-family: monospace; font-size: .85rem; margin-top: 4px; }
+    .ico { display: inline-block; width: 1.4em; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <h1>Experimental Research Project — test suite</h1>
+  <p>These run the same assertions as <code>node tests/run-node.js</code>, in your browser.</p>
+  <div id="summary">Running…</div>
+  <ul id="results"></ul>
+
+  <script src="assets/data.js"></script>
+  <script src="assets/logic.js"></script>
+  <script src="tests/cases.js"></script>
+  <script>
+    (function () {
+      var ERP = window.ERP, W = window.WORKSHOP, cases = window.ERP_CASES;
+      var results = document.getElementById("results");
+      var summary = document.getElementById("summary");
+      var pass = 0, fail = 0;
+      cases.forEach(function (c) {
+        var li = document.createElement("li");
+        try {
+          c.run(ERP, W);
+          pass++;
+          li.className = "pass";
+          li.innerHTML = '<span class="ico">✓</span>' + c.name;
+        } catch (e) {
+          fail++;
+          li.className = "fail";
+          li.innerHTML = '<span class="ico">✗</span>' + c.name + '<span class="err">' + e.message + '</span>';
+        }
+        results.appendChild(li);
+      });
+      summary.textContent = pass + " passed, " + fail + " failed, " + cases.length + " total";
+      summary.className = fail ? "bad" : "ok";
+    })();
+  </script>
+</body>
+</html>

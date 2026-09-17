@@ -4,6 +4,11 @@ window.WORKSHOP = {
   title: "Experimental Research Project",
   subtitle: "From a business problem to a decision the business can sign: experimental design and A/B testing, worked end to end.",
 
+  lab: {
+    intro: "This is Juma's sandbox. Set a baseline verification rate, the true lift the new flow really has, and how many users you put in each arm. Then run the experiment and watch what a single test actually sees. Run it again and again: the truth never moves, but the read does. That wobble is why sample size and holding your horizon matter.",
+    note: "Nothing here is scored. Break it, push the sliders to the edges, and see what a test can and cannot tell you."
+  },
+
   setting: {
     intro: "Tuma is a mobile wallet used across Nairobi. People install the app, verify their ID, and then send money, pay bills and buy airtime. Tuma earns a small fee on each transaction. Nobody can transact until they are verified.",
     stats: [
@@ -93,6 +98,20 @@ window.WORKSHOP = {
             { key: "d", text: "Null: the 7-day verification rate is the same in both flows. Alternative: the rate is different, in either direction",
               feedback: "The null is 'no difference'. The alternative is two-sided because auto-capture can fail on some phones and make things worse; a one-sided test would hide that." }
           ]
+        },
+        {
+          id: "q1c",
+          type: "order",
+          prompt: "Put the path from a business problem to a testable hypothesis in the right order.",
+          desk: "The growth lead drops one line on your desk: 'Onboarding is broken, fix verification this quarter.' Before anything can be tested, that has to become a claim a skeptic could doubt. Drag the steps into order.",
+          sequence: [
+            "State the business problem in one line, with a number",
+            "Ask what the business would do differently under each answer",
+            "Name the change, the group, the outcome and the direction",
+            "Write the null, and a two-sided alternative with alpha and power"
+          ],
+          shuffle: [2, 0, 3, 1],
+          feedback: "A hypothesis is built, not guessed. Pin the problem to a number, find the decision it feeds, name the change and the outcome it should move, then write the boring world it has to beat."
         }
       ],
       fileEntry: "Hypothesis: single-screen auto-capture increases the share of new sign-ups who verify within 7 days. Decision: whether to spend six engineer-weeks and ship it; owner, head of product. Null: same rate in both flows. Alternative: different, either direction. Alpha 5 percent, power 80 percent. If the interval spans zero, the report says 'could not tell'."
@@ -220,6 +239,21 @@ window.WORKSHOP = {
             { key: "d", text: "About 160 per arm; at 7,000 sign-ups a week, three days is plenty",
               feedback: "160 per arm can only detect a huge lift, far bigger than 5 points. Three days also skips a full weekly cycle, and the 7-day outcome window has not even closed." }
           ]
+        },
+        {
+          id: "q5b",
+          type: "slider",
+          prompt: "Drag to the sample size a 55% vs 60% test needs, per arm.",
+          desk: "Baseline verification is 55 percent. Product will only rebuild for a 5-point lift or better, at 80 percent power and 5 percent significance. Roughly how many users does each arm need before a lift that size would show?",
+          image: "ab-split.png",
+          min: 0,
+          max: 6000,
+          step: 50,
+          start: 3000,
+          answer: 1550,
+          tolerance: 350,
+          unit: " per arm",
+          feedback: "About 1,550 per arm. Far fewer and only a huge, unrealistic lift would ever show; far more just buys weeks of delay the decision does not need. Open the Lab to feel how sample size trades against the effect you can catch."
         }
       ],
       fileEntry: "Sample: about 1,600 per arm (one full week of sign-ups gives 3,500 per arm, more than enough). Horizon: two weeks, fixed. Assignment: hash of user ID and 'verify-flow-q3'. Day-one checks: arm split, data arriving from the compliance system. Daily: guardrails only. Primary: sealed until the end."
@@ -319,13 +353,17 @@ window.WORKSHOP = {
           answer: "b",
           options: [
             { key: "a", text: "Do not ship: the interval crossed the 5-point bar that product set",
-              feedback: "The 5-point bar was a stand-in for 'worth the rebuild'. In shillings the rebuild pays for itself at about 1.2 points, and even the pessimistic end (3.5 points, KES 5.3 million) is far above the cost." },
+              feedback: "The 5-point bar was a stand-in for 'worth the rebuild'. In shillings the rebuild pays for itself at about 1.2 points, and even the pessimistic end (3.5 points, KES 5.3 million) is far above the cost.",
+              outcome: "Three months on, verification is still stuck at 55 percent and roughly KES 5 to 12 million a year is left on the table. The growth lead escalates over Juma's head, and a rushed rebuild ships anyway, this time with no clean read on whether it worked." },
             { key: "b", text: "Ship: even the lower bound returns more than twice the full cost. Keep the fraud and rejection guardrails on the dashboard for 90 days",
-              feedback: "In shillings, the rebuild pays for itself at about 1.2 points, and the pessimistic end of the interval is three times that. Keeping the guardrails on the dashboard protects the result after launch." },
+              feedback: "In shillings, the rebuild pays for itself at about 1.2 points, and the pessimistic end of the interval is three times that. Keeping the guardrails on the dashboard protects the result after launch.",
+              outcome: "The flow ships. Verification climbs, first transactions follow, and the fraud line on the dashboard never twitches because it is being watched. The decision took one meeting, and the head of product signs Juma's file without a single follow-up question." },
             { key: "c", text: "Run a second test for six more weeks so the interval clears 5 points cleanly",
-              feedback: "More weeks would cost money and change nothing. The lower bound already pays for the rebuild more than twice over, so the decision is the same whatever a longer test shows." },
+              feedback: "More weeks would cost money and change nothing. The lower bound already pays for the rebuild more than twice over, so the decision is the same whatever a longer test shows.",
+              outcome: "Six weeks and a chunk of budget later, the interval barely moves. The team ships exactly what the first test already justified, only now a quarter late, and the growth lead has stopped trusting the word 'test'." },
             { key: "d", text: "Ship, and drop the compliance review since fraud did not move",
-              feedback: "Shipping is right, but dropping the review removes the guardrail that made the result trustworthy. Fraud stayed flat partly because compliance was checking." }
+              feedback: "Shipping is right, but dropping the review removes the guardrail that made the result trustworthy. Fraud stayed flat partly because compliance was checking.",
+              outcome: "The flow ships and the number looks great, until month two, when a wave of auto-captured bad IDs sails through unchecked. The fraud spike claws back the win, and the post-mortem lands on the desk of the analyst who removed the guardrail." }
           ]
         }
       ],
@@ -335,6 +373,8 @@ window.WORKSHOP = {
 
   closing: {
     lesson: "Set the bar in shillings before the test, not in points after it.",
+    epilogueGood: "You shipped the flow the numbers backed, with the guardrails still on. Verification climbs, the fraud line stays flat, and Juma's file gets signed in one meeting. This is what an analyst the business can trust looks like.",
+    epilogueBad: "The decision you filed would have cost Tuma money, trust, or both. Reread the reveal on stage five: the whole point of five stages of careful work is a final call that survives contact with a budget meeting.",
     match: [
       { stage: 1, text: "What exactly changes, for whom, and what should it move? And what is the boring world we have to beat?" },
       { stage: 2, text: "Who can the change reach, what is one unit, what currency settles the decision, and which guardrail carries the risk?" },
