@@ -77,6 +77,13 @@
     for (var i = 0; i < n; i++) if (order[i] !== i) return false;
     return true;
   }
+  // Fisher-Yates. rnd is an optional [0,1) source (injected for deterministic tests).
+  function shuffle(arr, rnd) {
+    rnd = rnd || Math.random;
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }
 
   /* ---------- A/B test simulator math (feature 1) ----------
      Proportions expressed as fractions (0.55), effects as fractions too. */
@@ -147,7 +154,7 @@
   return {
     WAGERS: WAGERS, wagerMult: wagerMult,
     questionXP: questionXP, streakInfo: streakInfo, rankForXP: rankForXP,
-    sliderCorrect: sliderCorrect, sliderHint: sliderHint, orderCorrect: orderCorrect,
+    sliderCorrect: sliderCorrect, sliderHint: sliderHint, orderCorrect: orderCorrect, shuffle: shuffle,
     requiredSamplePerArm: requiredSamplePerArm, abStats: abStats, abPower: abPower, normCdf: normCdf,
     BADGES: BADGES, earnedBadges: earnedBadges, badgeById: badgeById,
     Z_ALPHA: Z_ALPHA, Z_POWER: Z_POWER, clamp: clamp

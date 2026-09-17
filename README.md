@@ -12,7 +12,8 @@ Each stage has four steps: **Learn**, **Watch Juma**, **Your turn** (multiple ch
 
 ## Features
 
-- Nine questions in three interaction styles — multiple choice (with specific feedback for every wrong option), a drag-to-order task, and a slider estimate — plus retries and a "Show me the answer" option after two wrong tries
+- Nine questions in three interaction styles — multiple choice (with specific feedback for every wrong option), a drag-to-order task, and a slider estimate — plus retries and a "Show me the answer" option after two wrong tries. Multiple-choice options are **shuffled per learner** so answers can't be memorised as "it's C", and the order is saved so it never jumps between visits
+- **Resume anywhere.** Every action is saved to the browser immediately, so a refresh (or closing the tab and coming back) drops the learner back on the exact screen, with the same answers, points, badges and shuffled option order intact
 - **Points and streaks.** Every answer earns XP: full marks first try, less for each retry, a streak bonus for consecutive first-try wins, and a rank that climbs from "Analyst in Training" to "Head of Insight"
 - **Confidence wager.** Before checking, learners wager how sure they are (Hunch / Confident / Certain), which multiplies the points at stake — Certain doubles a win but stings a miss
 - **Badges.** Ten achievements (Flawless, No Peeking, Comeback, High Roller, Experimenter, and more) unlock with a toast and confetti
@@ -26,7 +27,7 @@ Each stage has four steps: **Learn**, **Watch Juma**, **Your turn** (multiple ch
 
 ## Tests
 
-Pure logic (scoring, streaks, simulator maths, answer-checking, badges, and content integrity) lives in `assets/logic.js` and is covered by a shared suite in `tests/cases.js`:
+Pure logic (scoring, streaks, simulator maths, answer-checking, shuffling, badges, and content integrity) lives in `assets/logic.js` and is covered by a shared suite in `tests/cases.js`. Alongside the worked-example checks there are **property-based tests** that hammer each function with thousands of seeded-random inputs (~24,000 cases) to assert invariants hold — e.g. a shuffle is always a permutation, XP never leaves `[0,200]`, a confidence interval always brackets its estimate, and power rises with sample size.
 
 - **In the browser:** open `tests.html` — it runs every assertion and shows pass/fail.
 - **In Node:** `node tests/run-node.js` (no dependencies to install).

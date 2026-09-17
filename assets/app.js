@@ -83,6 +83,19 @@
     if (!Array.isArray(state.q[id].wrong)) state.q[id].wrong = [];
     return state.q[id];
   }
+  // A per-question option order, shuffled once and persisted so it is stable
+  // across re-renders and page refreshes. Option identity stays the key; only
+  // the display position (and its a/b/c/d label) changes.
+  var LETTERS = ["a", "b", "c", "d", "e", "f"];
+  function optOrder(q) {
+    var s = qStateW(q.id);
+    var keys = q.options.map(function (o) { return o.key; });
+    var ok = Array.isArray(s.opts) && s.opts.length === keys.length && keys.every(function (k) { return s.opts.indexOf(k) >= 0; });
+    if (!ok) { s.opts = ERP.shuffle(keys); saveState(); }
+    return s.opts;
+  }
+  function mcqLetter(q, key) { var i = optOrder(q).indexOf(key); return i >= 0 ? LETTERS[i] : key; }
+
   function resolved(q) { var s = qState(q.id); return s.solved || s.shown; }
   function firstTry(q) { var s = qState(q.id); return s.solved && !s.shown && s.wrong.length === 0; }
   function stageDone(i) { return W.stages[i].questions.every(resolved); }
@@ -578,8 +591,11 @@
     var lastWrong = s.wrong.length ? s.wrong[s.wrong.length - 1] : null;
     var name = "opt-" + q.id, fbId = "fb-" + q.id;
 
+    var order = optOrder(q);
     var opts = h("div", { class: "options", role: "radiogroup", "aria-labelledby": "prompt-" + q.id, "aria-describedby": fbId },
-      q.options.map(function (o) {
+      order.map(function (key, pos) {
+        var o = q.options.filter(function (x) { return x.key === key; })[0];
+        var dl = LETTERS[pos];
         var isWrong = s.wrong.indexOf(o.key) >= 0;
         var isRight = done && o.key === q.answer;
         var cls = "option" + (isWrong ? " is-wrong" : "") + (isRight ? " is-right" : "") + (s.sel === o.key && !done && !isWrong ? " is-selected" : "");
@@ -588,8 +604,8 @@
           h("input", { type: "radio", name: name, id: inputId, value: o.key,
             checked: s.sel === o.key && !isWrong, disabled: done || isWrong,
             onchange: function () { s.sel = o.key; saveState(); selectInPlace(q, o.key); } }),
-          h("span", { class: "opt-key", "aria-hidden": "true" }, isRight ? "✓" : isWrong ? "✕" : o.key),
-          h("span", { class: "opt-text" }, h("span", { class: "sr-only" }, "Option " + o.key + ". "), o.text,
+          h("span", { class: "opt-key", "aria-hidden": "true" }, isRight ? "✓" : isWrong ? "✕" : dl),
+          h("span", { class: "opt-text" }, h("span", { class: "sr-only" }, "Option " + dl + ". "), o.text,
             isWrong ? h("span", { class: "sr-only" }, " (incorrect)") : null, isRight ? h("span", { class: "sr-only" }, " (correct)") : null)
         );
       })
@@ -599,11 +615,11 @@
     if (s.solved) fb.appendChild(h("div", { class: "feedback ok" },
       h("p", { class: "fb-title" }, xpLine(s, s.wrong.length === 0 ? "Correct, first time." : "Correct.")), h("p", null, correctOpt.feedback)));
     else if (s.shown) fb.appendChild(h("div", { class: "feedback info" },
-      h("p", { class: "fb-title" }, "The best option is " + q.answer.toUpperCase() + "."), h("p", null, correctOpt.feedback)));
+      h("p", { class: "fb-title" }, "The best option is " + mcqLetter(q, q.answer).toUpperCase() + "."), h("p", null, correctOpt.feedback)));
     else if (lastWrong) {
       var wo = q.options.filter(function (o) { return o.key === lastWrong; })[0];
       fb.appendChild(h("div", { class: "feedback bad" },
-        h("p", { class: "fb-title" }, "Not quite. Option " + lastWrong.toUpperCase() + " is one of the common mistakes."),
+        h("p", { class: "fb-title" }, "Not quite. Option " + mcqLetter(q, lastWrong).toUpperCase() + " is one of the common mistakes."),
         h("p", null, wo ? wo.feedback : ""), h("p", { class: "fb-next" }, "Try another option.")));
     }
 
@@ -621,13 +637,13 @@
       var shownWrong = done ? s.wrong : s.wrong.slice(0, -1);
       history = h("details", { class: "history" }, h("summary", null, "Why the other options you tried are wrong"),
         shownWrong.map(function (k) { var o = q.options.filter(function (x) { return x.key === k; })[0];
-          return o ? h("p", null, h("strong", null, k.toUpperCase() + ". "), o.feedback) : null; }));
+          return o ? h("p", null, h("strong", null, mcqLetter(q, k).toUpperCase() + ". "), o.feedback) : null; }));
     }
     var others = null;
     if (done) {
       var untried = q.options.filter(function (o) { return o.key !== q.answer && s.wrong.indexOf(o.key) < 0; });
       if (untried.length) others = h("details", { class: "history" }, h("summary", null, "Why the options you did not pick are wrong"),
-        untried.map(function (o) { return h("p", null, h("strong", null, o.key.toUpperCase() + ". "), o.feedback); }));
+        untried.map(function (o) { return h("p", null, h("strong", null, mcqLetter(q, o.key).toUpperCase() + ". "), o.feedback); }));
     }
 
     return questionShell(q, idx, count, [
@@ -831,9 +847,10 @@
       h("ol", { class: "reveal-order" }, q.sequence.map(function (t) { return h("li", null, t); })),
       h("h3", null, "Why"), h("p", null, q.feedback), h("p", { class: "muted small" }, mark));
     var o = q.options.filter(function (x) { return x.key === q.answer; })[0];
+    var dl = mcqLetter(q, q.answer).toUpperCase();
     return h("div", { class: "reveal-card" },
-      h("span", { class: "reveal-letter", "aria-hidden": "true" }, q.answer.toUpperCase()),
-      h("p", { class: "reveal-answer" }, h("span", { class: "sr-only" }, "Answer " + q.answer.toUpperCase() + ": "), o.text),
+      h("span", { class: "reveal-letter", "aria-hidden": "true" }, dl),
+      h("p", { class: "reveal-answer" }, h("span", { class: "sr-only" }, "Answer " + dl + ": "), o.text),
       h("h3", null, "Why"), h("p", null, o.feedback), h("p", { class: "muted small" }, mark));
   }
 
