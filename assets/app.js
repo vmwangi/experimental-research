@@ -730,12 +730,8 @@
     var list = h("ol", { class: "order-list" + (done ? " is-locked" : ""), id: "ord-" + q.id }, display.map(function (itemIdx, pos) {
       var correctHere = done && itemIdx === pos;
       var row = h("li", { class: "order-item" + (correctHere ? " is-right" : "") + (done && !correctHere && !showCorrect ? " is-off" : ""),
-        draggable: !done, "data-pos": String(pos),
-        ondragstart: done ? null : function (e) { e.dataTransfer.setData("text/plain", String(pos)); e.dataTransfer.effectAllowed = "move"; this.classList.add("dragging"); },
-        ondragend: function () { this.classList.remove("dragging"); },
-        ondragover: done ? null : function (e) { e.preventDefault(); this.classList.add("drop-hint"); },
-        ondragleave: function () { this.classList.remove("drop-hint"); },
-        ondrop: done ? null : function (e) { e.preventDefault(); this.classList.remove("drop-hint"); moveOrder(q, parseInt(e.dataTransfer.getData("text/plain"), 10), pos); } },
+        "data-pos": String(pos),
+        onpointerdown: done ? null : function (e) { startOrderDrag(e, q, pos); } },
         h("span", { class: "order-grip", "aria-hidden": "true" }, "≡"),
         h("span", { class: "order-text" }, q.sequence[itemIdx]),
         done ? null : h("span", { class: "order-moves" },
@@ -1228,10 +1224,7 @@
     var correct = items.filter(function (it, i) { return String(state.match[i]) === String(it.stage); }).length;
 
     // Pool: question chips not yet placed.
-    var pool = h("div", { class: "match-pool", "aria-label": "Unplaced questions",
-      ondragover: function (e) { e.preventDefault(); this.classList.add("drop-hint"); },
-      ondragleave: function () { this.classList.remove("drop-hint"); },
-      ondrop: function (e) { e.preventDefault(); this.classList.remove("drop-hint"); var qi = parseInt(e.dataTransfer.getData("text/plain"), 10); if (!isNaN(qi)) { delete state.match[qi]; state.matchChecked = false; saveState(); render(); } } },
+    var pool = h("div", { class: "match-pool", "aria-label": "Unplaced questions" },
       items.map(function (it, i) { return state.match[i] ? null : chip(i, it); }).filter(Boolean).length
         ? items.map(function (it, i) { return state.match[i] ? null : chip(i, it); })
         : h("p", { class: "muted small pool-empty" }, "All placed. Check your matches, or drag a chip back here to change it."));
@@ -1243,9 +1236,7 @@
       var right = checked && placed && String(items[qi].stage) === String(stg.num);
       var wrong = checked && placed && !right;
       return h("li", { class: "match-slot" + (right ? " is-right" : "") + (wrong ? " is-wrong" : ""),
-        ondragover: function (e) { e.preventDefault(); this.classList.add("drop-hint"); },
-        ondragleave: function () { this.classList.remove("drop-hint"); },
-        ondrop: function (e) { e.preventDefault(); this.classList.remove("drop-hint"); dropOnStage(e, stg.num); },
+        "data-stage": String(stg.num),
         onclick: function () { if (state.matchSel !== null && state.matchSel !== undefined) placeSel(stg.num); } },
         h("div", { class: "slot-head" }, h("span", { class: "slot-num" }, String(stg.num)), h("span", { class: "slot-title" }, stg.title)),
         placed ? chip(qi, items[qi], true) : h("span", { class: "slot-empty" }, "Drop a question here, or select one then click here"),
@@ -1272,18 +1263,12 @@
   function chip(qi, it, placed) {
     var selected = state.matchSel === qi;
     return h("button", { type: "button", class: "match-chip" + (placed ? " is-placed" : "") + (selected ? " is-sel" : ""),
-      draggable: true, "aria-pressed": String(selected),
-      ondragstart: function (e) { e.dataTransfer.setData("text/plain", String(qi)); e.dataTransfer.effectAllowed = "move"; this.classList.add("dragging"); },
-      ondragend: function () { this.classList.remove("dragging"); },
-      onclick: function (e) { e.stopPropagation(); state.matchSel = selected ? null : qi; saveState(); render(); } },
-      h("span", { class: "chip-grip", "aria-hidden": "true" }, "≡"), it.text);
+      "aria-pressed": String(selected),
+      onpointerdown: function (e) { startChipDrag(e, qi); },
+      onclick: function (e) { e.stopPropagation(); if (suppressClick) return; state.matchSel = selected ? null : qi; saveState(); render(); } },
+      h("span", { class: "chip-grip", "aria-hidden": "true" }, "⠿"), it.text);
   }
 
-  function dropOnStage(e, stageNum) {
-    var qi = parseInt(e.dataTransfer.getData("text/plain"), 10);
-    if (isNaN(qi)) return;
-    assignMatch(qi, stageNum);
-  }
   function placeSel(stageNum) {
     if (state.matchSel === null || state.matchSel === undefined) return;
     assignMatch(state.matchSel, stageNum);
@@ -1296,6 +1281,73 @@
     state.match[qi] = stageNum;
     state.matchChecked = false;
     saveState(); render();
+  }
+
+  /* ---------- pointer drag: one path for mouse, touch and pen ----------
+     Native HTML5 drag-and-drop never fires on touch devices, so both the
+     matching chips and the ordering rows use Pointer Events instead. Tap,
+     the arrow buttons, and the keyboard remain as fallbacks. */
+
+  var suppressClick = false;
+  var dropHi = null;
+
+  function makeGhost(text) {
+    var g = document.createElement("div");
+    g.className = "drag-ghost"; g.textContent = text;
+    document.body.appendChild(g); return g;
+  }
+  function moveGhost(g, x, y) { g.style.left = x + "px"; g.style.top = y + "px"; }
+  function underPoint(x, y, sel) { var el = document.elementFromPoint(x, y); return el && el.closest ? el.closest(sel) : null; }
+  function setDropHi(el) { if (dropHi === el) return; if (dropHi) dropHi.classList.remove("drop-hint"); dropHi = el; if (el) el.classList.add("drop-hint"); }
+
+  function startChipDrag(e, qi) {
+    if (e.button != null && e.button !== 0) return;
+    var src = e.currentTarget, sx = e.clientX, sy = e.clientY, moved = false, ghost = null;
+    function move(ev) {
+      if (!moved && Math.abs(ev.clientX - sx) + Math.abs(ev.clientY - sy) < 8) return;
+      if (!moved) { moved = true; src.classList.add("dragging"); ghost = makeGhost(src.textContent); }
+      ev.preventDefault();
+      moveGhost(ghost, ev.clientX, ev.clientY);
+      setDropHi(underPoint(ev.clientX, ev.clientY, ".match-slot") || underPoint(ev.clientX, ev.clientY, ".match-pool"));
+    }
+    function up(ev) {
+      window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up);
+      setDropHi(null); if (ghost) ghost.remove();
+      if (moved) {
+        suppressClick = true; setTimeout(function () { suppressClick = false; }, 0);
+        var slot = underPoint(ev.clientX, ev.clientY, ".match-slot");
+        var pool = underPoint(ev.clientX, ev.clientY, ".match-pool");
+        if (slot && slot.getAttribute("data-stage")) assignMatch(qi, parseInt(slot.getAttribute("data-stage"), 10));
+        else if (pool) { delete state.match[qi]; state.matchChecked = false; saveState(); render(); }
+        else render();
+      }
+    }
+    window.addEventListener("pointermove", move, { passive: false });
+    window.addEventListener("pointerup", up);
+  }
+
+  function startOrderDrag(e, q, fromPos) {
+    if (e.button != null && e.button !== 0) return;
+    if (e.target && e.target.closest && e.target.closest(".order-move")) return; // let arrow buttons work
+    var src = e.currentTarget, sx = e.clientX, sy = e.clientY, moved = false, ghost = null;
+    function move(ev) {
+      if (!moved && Math.abs(ev.clientX - sx) + Math.abs(ev.clientY - sy) < 8) return;
+      if (!moved) { moved = true; src.classList.add("dragging"); ghost = makeGhost(src.textContent); }
+      ev.preventDefault();
+      moveGhost(ghost, ev.clientX, ev.clientY);
+      setDropHi(underPoint(ev.clientX, ev.clientY, ".order-item"));
+    }
+    function up(ev) {
+      window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up);
+      setDropHi(null); if (ghost) ghost.remove();
+      if (moved) {
+        var row = underPoint(ev.clientX, ev.clientY, ".order-item");
+        if (row && row.getAttribute("data-pos") != null) moveOrder(q, fromPos, parseInt(row.getAttribute("data-pos"), 10));
+        else render();
+      }
+    }
+    window.addEventListener("pointermove", move, { passive: false });
+    window.addEventListener("pointerup", up);
   }
 
   /* ---------- celebrations: confetti, toast, sound (feature 4) ---------- */
